@@ -116,26 +116,25 @@ func URLParser(mimetypeDetectorType string) gin.HandlerFunc {
 // OperationParser extracts the operation and add it to the context
 func OperationParser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		parameters := c.MustGet("parameters").(map[string]string)
-
-		operation, ok := parameters["op"]
-
-		if !ok {
+		operations := c.QueryArray("op")
+		if len(operations) == 0 {
 			c.String(http.StatusBadRequest, "`op` parameter or query string cannot be empty")
 			c.Abort()
 			return
 		}
 
-		op, ok := engine.Operations[operation]
-
-		if !ok {
-			c.String(http.StatusBadRequest, fmt.Sprintf("Invalid method %s or invalid parameters", operation))
-			c.Abort()
-			return
+		var ops []engine.Operation
+		fmt.Println(operations)
+		for _, operation := range operations {
+			op, ok := engine.Operations[operation]
+			if !ok {
+				c.String(http.StatusBadRequest, fmt.Sprintf("Invalid method %s or invalid parameters", operation))
+				c.Abort()
+				return
+			}
+			ops = append(ops, op)
 		}
-
-		c.Set("op", op)
-
+		c.Set("op", ops)
 		c.Next()
 	}
 }

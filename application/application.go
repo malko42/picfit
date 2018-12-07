@@ -274,10 +274,16 @@ func processImage(c *gin.Context, l logger.Logger, storeKey string, async bool) 
 		return nil, err
 	}
 
-	op := c.MustGet("op").(engine.Operation)
-	file, err = engine.FromContext(c).Transform(file, op, parameters)
-	if err != nil {
-		return nil, err
+	ops := c.MustGet("op").([]engine.Operation)
+
+	for _, o := range ops {
+		if len(file.Processed) > 0 {
+			file.Source = file.Processed
+		}
+		file, err = engine.FromContext(c).Transform(file, o, parameters)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	filename := ShardFilename(c, storeKey)
